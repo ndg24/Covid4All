@@ -1,0 +1,101 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title></title>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900" rel="stylesheet" />
+        <link href="default.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
+        
+        </head>
+    <body>
+        <script>
+
+        var string = "initialize"
+        var check = "initialize"
+        var string2 = "initialize"
+        var check2 = "initialize"
+        var string3 = "initialize"
+        var check3 = "initialize"
+        function myFunction() {
+            var string, check,string2,string3,check2,check3;
+            string = document.getElementById("age").value;
+            string2 = document.getElementById("age2").value;
+            string3 = document.getElementById("age3").value;
+
+            if (string == "RACOON") {
+                check = "Correct!"
+            }
+            else {
+                check = "Wrong Answer!"
+            }
+            if (string2 == "SEASIDE") {
+                check2 = "Correct!"
+            }
+            else {
+                check2 = "Wrong Answer!"
+            }
+            if (string3 == "SETTING") {
+                check3 = "Correct!"
+            }
+            else {
+                check3 = "Wrong Answer!"
+            }
+
+            if (string == "RACOON" && string2 == "SEASIDE" && string3 == "SETTING") {
+                window.location.href = "\Puzzle6.html";
+            }
+            
+            document.getElementById("demo").innerHTML = check;
+            document.getElementById("demo2").innerHTML = check2;
+            document.getElementById("demo3").innerHTML = check3;
+          }
+        </script>
+        <div id="header-wrapper">
+            <div id="header" class="container">
+                <div id="logo">
+                    <h1><span class="fa fa-globe"></span><a href="..\mainSite\index.html">Covid 4 All</a></h1>
+                </div>
+                <div id="menu">
+                    <ul>
+                        <li class="current_page_item"><a href="..\mainSite\index.html">Homepage</a></li>
+                        <li><a href="..\mainSite\aboutCovid.html">About Covid</a></li>
+                        <li><a href="..\mainSite\Numbers.html">Know The Numbers</a></li>
+                        <li><a href="..\mainSite\Measures.html">Preventitive Measures</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="header-featured">
+            <div id="banner-wrapper">
+                <div id="banner" class="container">
+                    <h2>WELCOME TO THE FIFTH ROOM</h2>
+                    <h3></h3>
+                    <p>This puzzle has three ANAGRAM! </p>
+                    <p>An anagram is a word that can be arranged into a different word! For example, Elvis and Lives are anagrams!</p>
+                    <p>Note: Use all CAPITAL LETTERS for all three anagrams!</p>
+                    
+                </div>
+            </div>
+        </div>
+        <div id="wrapper">
+            <div id="featured-wrapper">
+                <a>CORONA = </a>
+                <input id="age" value="" />
+                <button onclick="myFunction()" class="button button2">SUBMIT</button>
+                <p id="demo"></p>
+                <a>DISEASE = </a>
+                <input id="age2" value="" />
+                <button onclick="myFunction()" class="button button2">SUBMIT</button>
+                <p id="demo2"></p>
+                <a>TESTING = </a>
+                <input id="age3" value="" />
+                <button onclick="myFunction()" class="button button2">SUBMIT</button>
+                <p id="demo3"></p>
+
+            </div> 
+        </div>
+        
+        </body>
+</html>
