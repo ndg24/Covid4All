@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="https://cdn.pixabay.com/photo/2020/04/29/08/35/coronavirus-5107832__340.png">
+        <title>COVID-19 CARD GAME</title>
+
+        <style>
+            
+            .card {
+                background-color: salmon;
+                height: 200px;
+                width: 125px;
+                float: left;
+                margin: 2.5px;
+                font-family: Verdana;
+                text-align: center;
+                cursor:grab;
+                padding: 10px;
+            }
+
+            .counterDisplay {
+                background-color: gold;
+                outline: solid black 1px;
+                height: 50px;
+                width: 15%;
+                position:absolute;
+                top: 500px;
+                left: 55%;
+                padding-top: 5px;
+                text-align: center;
+                font-family: Verdana;
+            }
+
+            .cardArea {
+                background-color: palegoldenrod;
+                outline: solid black 1px;
+                height: 300px;
+                width: 50%;
+                position:absolute;
+                top: 500px;
+            }
+
+            button {
+                background-color: orange;
+                outline: solid black 1px;
+                height: 50px;
+                width: 15%;
+                position:absolute;
+                top: 700px;
+                left: 55%;
+                text-align: center;
+                font-family: Verdana;
+                cursor: pointer;
+            }
+
+            #outbreakArea {
+                height:80%;
+                width:22%;
+                top: 10%;
+                left: 75%;
+                position:absolute;
+                background-color: palegoldenrod;
+                outline: solid black 1px;
+                overflow-y: auto;
+            }
+
+            #blurbBox {
+                height:40%;
+                width: 15%;
+                top: 10%;
+                left: 55%;
+                position: absolute;
+                background-color: palegoldenrod;
+                outline: solid black 1px;
+                overflow-y: auto;
+                font-family: Verdana;
+                font-style: italic;
+                font-size: 14px;
+                padding: 5px;
+            }
+
+            .cardImage {
+                float:top;
+                height:50%;
+                width:100%;
+                background-size: 100% 100%;
+            }
+
+            .cardText {
+                background-color:salmon;
+                font-family:Verdana;
+                font-size:12px;
+                color:black;
+                float:top;
+                height:35%;
+                width:100%;
+            }
+
+            .cardTitle {
+                height:15%;
+                width: 100%;
+                float:top;
+                color:black;
+                font-size:14px;
+                font-family: Verdana;
+                font-weight: bold;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+        <div id="outbreakArea" style="z-Index:-1"></div>
+        <div id="blurbBox" style="z-Index:-1"></div> 
+        <div id="intelPointDisplay" class="counterDisplay" style="z-Index:-1"></div>
+        <div id="populationDisplay" class="counterDisplay" style="top:550px; z-Index:-1"></div>
+        <div id="infectedDisplay" class="counterDisplay" style="top: 600px; z-Index:-1"></div>
+        <div id="deathDisplay" class="counterDisplay" style="top: 650px; z-Index:-1"></div>
+        <button id="endTurnBtn" style="top: 750px; z-Index:-1" onclick="endTurn();">End Turn</button>
+
+        <div id="playArea" class="cardArea" style="overflow-y:auto;"></div>
+        <div id="handArea" class="cardArea" style="top:10%; height:40%;"></div>
+        
+    </body>
+
+</html>
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<script>
+
+/* 
+-----
+SETUP
+-----
+*/
+
+var handCount = 0;
+
+var numDeaths = 0;
+var deathRate = 0.017;
+
+document.getElementById("deathDisplay").innerText = "Total Deaths: " + numDeaths;
+var cardsArray = [];
+
+var cardsElemArray = [];
+var cardsDrawn = 0;
+
+var infectionRate = 2.5;
+var numInfected = 100;
+var infectedDisplayElem = document.getElementById("infectedDisplay");
+
+var populationLeft = 100000 - numInfected;
+var populationDisplayElem = document.getElementById("populationDisplay");
+
+var intelPoints = 0;
+var intelPointDisplayElem = document.getElementById("intelPointDisplay");
+
+intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+infectedDisplayElem.innerText = "Infected: " + numInfected;
+populationDisplayElem.innerText = "Population: " + populationLeft;
+
+/*
+--------------------------
+DEFINING PLAYER CARD TYPES
+--------------------------
+*/
+
+class ToiletPaper {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Toilet Paper";
+        this.description = "Gain two intelligence points";
+        this.blurb = `toi·let pa·per
+/ˈtoilit ˌpāpər/
+noun
+paper in sheets or on a roll for wiping oneself clean after urination or defecation.`
+
+        this.image = "https://cdn.pixabay.com/photo/2020/04/14/13/18/toilet-roll-5042644__340.png";
+    }
+
+    requirementCheck() {
+        return true;
+    }
+
+    action() {
+        intelPoints += 2;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class CovidTest {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "COVID-19 Test";
+        this.description = "Look at the next two cards in the deck.";
+        this.blurb = "Cooooovid Teeeeest";
+        this.image = "https://downloads.healthcatalyst.com/wp-content/uploads/2020/07/OHIP_COVID-19_Cover-300x0-c-default.jpg";
+    }
+
+    requirementCheck() {
+        if (cardsDrawn < cardsArray.length - 2) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    action() {
+        var cardReveal = "";
+        for (i=0; i<2; i++) {
+            cardReveal += cardsArray[cardsDrawn + i].name + ", ";
+        }
+        alert(cardReveal);
+    }
+}
+
+class MandatoryMaskMandate {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Mandatory Mask Mandate";
+        this.description = "Spend 5 intelligence points to reduce the infection rate by 65% for this turn.";
+        this.blurb = "If properly worn, masks can reduce the risk of infection by up to 65%.";
+        this.image = "https://creazilla-store.fra1.digitaloceanspaces.com/emojis/42887/face-with-medical-mask-emoji-clipart-md.png";
+    }
+
+    requirementCheck() {
+        if (intelPoints >= 5) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    action() {
+        intelPoints -= 5;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+        infectionRate *= 0.35;
+    }
+}
+
+class DrFauci {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Dr. Fauci";
+        this.description = "Gain 5 intelligence points";
+        this.blurb = "Add a knowledgeble doctor to a Coronavirus Task Force to advise the government about what measures to take agaisnt COVID-19.";
+        this.image = "https://upload.wikimedia.org/wikipedia/commons/8/89/Anthony_S._Fauci%2C_M.D.%2C_NIAID_Director_%2826759498706%29.jpg";
+    }
+
+    requirementCheck() {
+        return true;
+    }
+
+    action() {
+        intelPoints += 5
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class Quarantine {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Quarantine";
+        this.description = "Spend 10 intelligence points. Infection rate is decreased by 80%";
+        this.blurb = "Quarantine is an effective way to slow the spread of Coronavirus. Coronavirus will show symptoms within 14 days of contracting it (2 weeks), so quarantines genrally last for 4 of those periods (8 weeks). However, it's effectiveness is diminished when people don't follow those orders. If you are in a quarantine, please obey your county's guidelines and stay safe.";
+        this.image = "https://upload.wikimedia.org/wikipedia/commons/6/6d/Quarantine_COVID-19.png";
+    }
+
+    requirementCheck(){
+        if (intelPoints >= 10) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    action() {
+        infectionRate *= 0.2;
+        intelPoints -= 10;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints; 
+    }
+}
+
+class MorePeopleWashHands {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "More People Wash Hands";
+        this.description = "Decrease infection rate by 2%.";
+        this.blurb = "Clean hands can stop germs from spreading from one person to another and throughout an entire community—from your home and workplace to childcare facilities and hospitals."
+        this.image = "https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/37019/handwashing-water-clipart-md.png";
+    }
+    
+    requirementCheck(){
+        return true;
+    }
+    
+    action() {
+        infectionRate *= 0.98;
+    }
+}
+
+class SuspendTravel {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "SuspendTravel";
+        this.description = "Spend 2 intelligence points to decrease infection rate by 1%.";
+        this.blurb = "Suspending travel could have helped to halt the spread of COVID-19 from country to country.";
+        this.image = "https://travelradar.aero/wp-content/uploads/2020/10/Lufthansa_B744_Berlin_IMG_8937-Wiki-Commons-scaled.jpg";
+        
+    }
+    
+    requirementCheck(){
+        if (intelPoints >= 2) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    action() {
+        intelPoints -= 2;   
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class ContactTracing {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Contact Tracing";
+        this.description = "Spend 4 intelligence points. Decreases infection rate by 20%";
+        this.blurb = "Create a team that specializes in Contact Tracing, which traces who got Coronavirus and who they could've passed the virus to. There is also software, jointly developed by Google and Apple, that uses people's phones and their bluetooth connections to alert people when they are around others who are (possibly) infected. This requires a large amount of resources and gets extremely complicated for larger countries.";
+        this.image = "https://upload.wikimedia.org/wikipedia/commons/c/ca/Contact-tracing_adapted.svg";
+    }
+
+    requirementCheck() {
+        if (intelPoints >= 4) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    action() {
+        infectionRate *= 0.8;
+        intelPoints -= 4;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints; 
+    }
+}
+
+class PeopleDontTouchFace {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Don't Touch Your Face";
+        this.description = "Gain 3 intelligence points.";
+        this.blurb = "Even though it is difficult to do, not touching your face is crucial to preventing yourself from contracting the virus. This is because although the skin is a great barrier against foreign invaders, such as viruses, but the face contains the mouth, eyes, nose, and ears. These don't have a barrier such as the skin, which gives the virus an easy way to enter the body. When using your hands, you often touch dirty surfaces that may contain the virus, so touching you face, which is generally cleaner, gives the virus a pathway into your body.";
+        this.image = "https://static.thenounproject.com/png/3339079-200.png";
+    }
+    
+    requirementCheck() {
+        return true; 
+    }
+    
+    action() {
+        intelPoints += 3;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class ResearchVaccine {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Research Vaccine";
+        this.description = "Invest three intelligence points and gain four more in return.";
+        this.blurb = "A vaccine for COVID-19 has not yet been discovered at the time of 11/15/2020. However, it is important to remember that a vaccine is not a cure, but rather a preventative measure.";
+        this.image = "https://cdn.pixabay.com/photo/2020/07/01/08/18/covid-19-5358852_1280.png";
+    }
+    
+    requirementCheck() {
+        if (intelPoints >= 3) {
+            return true;
+        }
+        else { 
+            return false; 
+        }
+    }
+
+    action () {
+        intelPoints += 4;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class HandSanitizer {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Hand Sanitizer";
+        this.description = "Spend 1 intelligence point. Decrease infection rate by 10%.";
+        this.blurb = "Constantly using hand sanitizer is a good way to make sure that you do not become infected by an object that you have touched.";
+        this.image = "https://cdn.pixabay.com/photo/2020/06/15/08/17/hand-sanitizer-5300802_1280.png";
+    }
+
+    requirementCheck() {
+        if (intelPoints >= 1) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    action() {
+        intelPoints -= 1;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+        infectionRate *= 0.9;
+    }
+}
+
+cardsArray = [
+    new DrFauci(), new MandatoryMaskMandate(), 
+    new HandSanitizer(),  new HandSanitizer(), 
+    new ResearchVaccine(), new PeopleDontTouchFace(), 
+    new ResearchVaccine(), new MorePeopleWashHands(), 
+    new Quarantine(), new ToiletPaper(), 
+    new CovidTest(), new ToiletPaper(), 
+    new CovidTest(), new ToiletPaper(), 
+    new CovidTest(), new MorePeopleWashHands(), 
+    new HandSanitizer(), new ResearchVaccine(),
+    new PeopleDontTouchFace(), new PeopleDontTouchFace(),
+    new ToiletPaper(), new CovidTest(),
+    new ContactTracing(), new SuspendTravel(),
+    new ContactTracing(), new SuspendTravel(),
+    new ToiletPaper(), new MorePeopleWashHands()
+];
+
+function shuffleArray(array) {
+    for (i=0; i<array.length; i++) {
+        var randint = Math.floor(Math.random() * array.length);
+        var thing = array[randint]
+        array.splice(randint, 1);
+        array.push(thing);
+    }
+} 
+
+shuffleArray(cardsArray);   
+
+/*
+----------------------------
+DEFINING OUTBREAK CARD TYPES
+----------------------------
+*/
+
+class SuperSpreaderEvent {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Super Spreader Event";
+        this.description = "Infect 200 people.";
+        this.blurb = "A superspreader event is when a large amount of people gather, despire COVID-19 restrictions. Usually, the people involved dont' wear masks or social distance. This leads to many of them getting COVID-19, and spreading it to the families and friends. One such example was the Sturgis Bike Rally, where 460,000 people attended. Studies show this could have led to 250,000 COVID-19 cases all across the country.";
+        this.image = "https://upload.wikimedia.org/wikipedia/commons/1/12/Flickr_-_moses_namkung_-_The_Crowd_For_DMB_1.jpg";
+    }
+
+    action() {
+        numInfected += 200;
+    }
+}
+
+class HoardToiletPaper {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Hoard Toilet Paper";
+        this.description = "Lose three intelligence points.";
+        this.blurb = "People Hoard toilet paper.";
+        this.image = "https://cdn.pixabay.com/photo/2019/01/30/12/35/toilet-paper-3964492__340.jpg";
+    }
+
+    action() {
+        intelPoints -= 3;
+        if (intelPoints < 0) {
+            intelPoints = 0;
+        }
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class LackOfHygeine {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "General Lack of Good Hygeine";
+        this.description = "Increases rate of infection by 15%.";
+        this.blurb = "It is important to maintain good hygeine during this pandemic so that we don't give ourselves COVID-19 or give it to others.";
+        this.image = "https://upload.wikimedia.org/wikipedia/commons/9/9f/Poop_Emoji_Icon.png";
+    }
+
+    action() {
+        infectionRate *= 1.15;
+    }
+}
+
+class Misinformation {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Misinformation";
+        this.description = "Lose 1 intelligence point. Infection rate increases by 10%.";
+        this.blurb = "Don't inject yourself with bleach!";
+        this.image = "https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/29366/bleach-bottle-clipart-md.png";
+    }
+
+    action() {
+        intelPoints -= 1;
+        if (intelPoints < 0) {
+            intelPoints = 0;
+        }
+
+        infectionRate *= 1.1;
+
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+class BadProtocol {
+    constructor(elemId) {
+        this.elemId = elemId;
+        this.name = "Not Following Proper Protocol";
+        this.description = "Lose 1 intelligence point. Infection rate ignores any other effects from other cards.";
+        this.blurb = "Make sure that you follow all of the protocol corrrectly. Wear your mask over your nose, wash your hands for a good twenty seconds, etc.";
+        this.image = "https://creazilla-store.fra1.digitaloceanspaces.com/vectors/18822/coronavirus-covid-19-prevention-vector-md.png"
+    }
+
+    action() {
+        intelPoints -= 1;
+        if (intelPoints < 0) {
+            intelPoints = 0;
+        }
+
+        infectionRate = 2.5;
+        intelPointDisplayElem.innerText = "Intelligence Points: " + intelPoints;
+    }
+}
+
+var outbreakDeck = [
+    new SuperSpreaderEvent(), new LackOfHygeine(), new Misinformation(), 
+    new HoardToiletPaper(), new LackOfHygeine(), new Misinformation(), 
+    new SuperSpreaderEvent(), new HoardToiletPaper(), new Misinformation(), 
+    new Misinformation(), new LackOfHygeine(), new HoardToiletPaper(), new BadProtocol()
+];
+
+shuffleArray(outbreakDeck);
+
+var outbreakElemArray = [];
+
+/*
+----------------------
+CREATING CARD ELEMENTS
+----------------------
+*/
+
+function showBlurb(blurb) {
+    document.getElementById('blurbBox').innerText = blurb;
+}
+
+var blurbBox = document.getElementById("blurbBox");
+
+function createCardElements(array, elemArray) {
+    for (i=0; i<array.length; i++) {
+        var newCard = document.createElement("div");
+        newCard.className = "card";
+        newCard.id = array[i].blurb;
+        newCard.style.bottom = array[i].blurb;
+
+        var newImg = document.createElement("div");
+        newImg.className = "cardImage";
+        newImg.style.backgroundImage = 'url(' + array[i].image + ')';
+        newCard.appendChild(newImg);
+
+        newCard.setAttribute("onclick", "document.getElementById('blurbBox').innerText = this.id");
+
+        var newTitle = document.createElement("div");
+        newTitle.innerText = array[i].name;
+        newTitle.className = "cardTitle";
+        newCard.appendChild(newTitle);
+        
+        var newText = document.createElement("div");
+        newText.innerText = array[i].description;
+        newText.className = "cardText";
+        newCard.appendChild(newText);
+
+        elemArray.push(newCard);
+    } 
+}
+
+createCardElements(cardsArray, cardsElemArray);
+createCardElements(outbreakDeck, outbreakElemArray)
+
+function isInside(moved, container) {
+    if ( moved.x >= container.x && moved.x <= container.x + container.width && moved.y >= container.y && moved.y <= container.y + container.height) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function coordinates(elem) {
+    element = $(elem);
+    var top = element.position().top;
+    var left = element.position().left;
+    if ( isInside( {x: left, y: top}, {x: 0, y: 500, width: document.getElementById("playArea").clientWidth, height: 300} ) ) {
+         for (i=0; i<cardsArray.length; i++) {
+            if (elem.id.includes(cardsArray[i].blurb)) {
+                cardObj = cardsArray[i];
+                break;
+            } 
+        }
+
+        if ( cardObj.requirementCheck() ) {
+            document.getElementById("playArea").appendChild(elem);
+            $(elem).draggable('disable');
+            elem.style = "float:left;";
+            cardObj.action()
+            handCount--;
+        }
+    }
+}
+
+function drawCard() {
+    if (handCount < 5) {
+        var newCardElem = cardsElemArray[cardsDrawn];
+        document.getElementById("handArea").appendChild(newCardElem);
+
+        document.getElementById('blurbBox').setAttribute("onclick", "alert('" + newCardElem.id + "')");
+
+        $(newCardElem).draggable({
+            start: function() {
+                coordinates(newCardElem);
+            },
+            stop: function() {
+                coordinates(newCardElem);
+            }
+        });
+
+        cardsDrawn++;
+        handCount++;
+    }
+}
+
+/*
+----------------------------------
+TURN MANAGEMENT/GAMEPLAY FUNCTIONS
+----------------------------------
+*/
+
+var turnNum = 1;
+
+function endGame(isLoss) {
+    alert("Game Over!");
+    if (isLoss) {
+        alert("You lose! Click reload to play again.");
+    } else {
+        alert("Number of Infected: " + numInfected);
+        alert("Deaths: " + numDeaths);
+        alert("Click reload to play again.");
+    }
+}
+
+drawCard();
+drawCard();
+drawCard();
+drawCard();
+drawCard();
+
+function endTurn() {
+    outbreakElemArray[turnNum-1].style = "float:left;";
+    outbreakElemArray[turnNum-1].style = "margin:2.5px;";
+    document.getElementById("outbreakArea").append(outbreakElemArray[turnNum-1]);
+    outbreakDeck[turnNum-1].action();
+    infect();
+    calculateDeaths();
+    
+    if (populationLeft == 0) {
+        endGame(true);
+    }
+    
+    if (turnNum >= 12) {
+        endGame(false);
+    } else {
+        turnNum++;
+    }
+
+    drawCard();
+    drawCard();
+}
+
+function infect() {
+    numInfected *= infectionRate;
+    numInfected = Math.floor(numInfected);
+    populationLeft = 100000 - numInfected;
+
+    if (populationLeft < 0) {
+        populationLeft = 0;
+    } 
+
+    if (numInfected > 100000) {
+        numInfected = 100000;
+    }
+
+    infectedDisplayElem.innerText = "Infected: " + numInfected;
+    infectionRate = 2.5;
+    deathRate = 0.017;
+    
+    populationDisplayElem.innerText = "Population: " + populationLeft;
+}
+
+function calculateDeaths() {
+    var newDeaths = Math.floor(numInfected * deathRate);
+    numInfected -= newDeaths;
+    numDeaths += newDeaths;
+    document.getElementById("deathDisplay").innerText = "Total Deaths: " + numDeaths;
+    infectedDisplayElem.innerText = "Infected: " + numInfected;
+}
+
+</script>
