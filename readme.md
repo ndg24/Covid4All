@@ -1,7 +1,5 @@
 # Welcome to Covid 4 All!
 
-By: Nilansh Dey Ghosh, Brandon Chun, Jonny Luo, and Rhythm Goyal
-
 -------------------------------------
 Description
 -------------------------------------
